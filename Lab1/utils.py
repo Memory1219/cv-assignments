@@ -19,3 +19,9 @@ def show_binary_image(image, title=None):
         plt.title(title)
 
     plt.show()
+
+def show_rgb_image(m):
+    plt.imshow(m)
+    plt.title('RGB Image')
+    plt.axis('off')
+    plt.show()
