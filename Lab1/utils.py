@@ -7,7 +7,7 @@ def show_binary_image(image, title=None):
     # is not the default colour space for OpenCV
 
     # Show the image
-
+    plt.figure(figsize=(5, 3))
     plt.imshow(image, cmap=plt.cm.gray)
 
     # remove the axis / ticks for a clean looking image
@@ -21,6 +21,7 @@ def show_binary_image(image, title=None):
     plt.show()
 
 def show_rgb_image(m):
+    plt.figure(figsize=(5, 3))
     plt.imshow(m)
     plt.title('RGB Image')
     plt.axis('off')
