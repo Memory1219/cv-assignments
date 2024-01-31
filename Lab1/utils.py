@@ -22,7 +22,7 @@ def show_binary_image(image, title=None):
 
 def show_rgb_image(m):
     plt.figure(figsize=(5, 3))
-    plt.imshow(m)
+    plt.imshow(m, cmap=plt.cm.gray)
     plt.title('RGB Image')
     plt.axis('off')
     plt.show()
