@@ -3,12 +3,12 @@ import matplotlib as mpl
 import numpy as np
 import math
 
+
 def show_rgb_image(image, title=None):
     # Converts from one colour space to the other. this is needed as RGB
     # is not the default colour space for OpenCV
 
-    mpl.rcParams['figure.dpi'] =  300
-
+    mpl.rcParams['figure.dpi'] = 300
 
     # Show the image
     plt.imshow(image)
@@ -22,6 +22,7 @@ def show_rgb_image(image, title=None):
         plt.title(title)
 
     plt.show()
+
 
 def show_binary_image(image, title=None):
     # Converts from one colour space to the other. this is needed as RGB
@@ -46,20 +47,19 @@ def show_binary_image(image, title=None):
 # Distribution with mean, Standard Deviation (sd) std_dev, for the value x.
 # example: sample_gaussian(0.1,0,np.arange(-3,4,1,dtype=np.float32)));
 # Calculates pdf with mean = 0, sd = 0.1, for a vector of 7 elements long
-def sample_gaussian(std_dev,mean,vec):
+def sample_gaussian(std_dev, mean, vec):
+    x = -np.square(vec - float(mean)) / (2.0 * math.pow(std_dev, 2))
 
-    x= -np.square(vec-float(mean))/(2.0*math.pow(std_dev,2))
-    
-    return np.array([1/(std_dev * math.sqrt(2* math.pi))  * np.exp(x)])
+    return np.array([1 / (std_dev * math.sqrt(2 * math.pi)) * np.exp(x)])
 
 
 def zero_cross(image):
     z_c_image = np.zeros(image.shape)
-    thresh = np.absolute(image).mean() * 0.75 #修改到10 20
-    h,w = image.shape
+    thresh = np.absolute(image).mean() * 0.75  # 修改到10 20
+    h, w = image.shape
     for y in range(1, h - 1):
         for x in range(1, w - 1):
-            patch = image[y-1:y+2, x-1:x+2]
+            patch = image[y - 1:y + 2, x - 1:x + 2]
             p = image[y, x]
             maxP = patch.max()
             minP = patch.min()
@@ -70,4 +70,28 @@ def zero_cross(image):
             if ((maxP - minP) > thresh) and zeroCross:
                 z_c_image[y, x] = 1
     return z_c_image
+
+
+def magnitude(x, y):
+    return np.sqrt(x ** 2, y ** 2)
+
+
+def get_threshold_on_max(image):
+    return np.max(image) * 0.1
+
+
+def create_subplots(plot_rows, plot_cols, figsize, image_list, fontsize, camp):
+    if len(image_list) > plot_rows*plot_cols | len(image_list) == 0:
+        raise ValueError('Number of image error')
+    fig, sub_figs = plt.subplots(plot_rows, plot_cols, figsize=figsize)
+    for i in range(plot_rows):
+        for j in range(plot_cols):
+            index = i*plot_cols + j
+            if index < len(image_list):
+                image_name, image_data = image_list[index]
+                sub_fig = sub_figs[index]
+                sub_fig.imshow(image_data, cmap=camp)
+                sub_fig.set_title(image_name, fontsize=fontsize)
+                sub_fig.axis('off')
+    return fig, sub_figs
 
