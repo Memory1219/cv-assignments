@@ -55,7 +55,7 @@ def sample_gaussian(std_dev,mean,vec):
 
 def zero_cross(image):
     z_c_image = np.zeros(image.shape)
-    thresh = np.absolute(image).mean() * 0.75
+    thresh = np.absolute(image).mean() * 0.75 #修改到10 20
     h,w = image.shape
     for y in range(1, h - 1):
         for x in range(1, w - 1):
