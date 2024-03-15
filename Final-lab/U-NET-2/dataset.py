@@ -20,9 +20,9 @@ def data_process(image, label):
     right_padding = 512 - image.shape[1] - left_padding
 
     # Pad the image and label
-    image = F.pad(image.unsqueeze(0), (left_padding, right_padding, top_padding, bottom_padding))
+    image = F.pad(image.unsqueeze(0), (left_padding, right_padding, top_padding, bottom_padding), value = 0)
     label = F.pad(label.unsqueeze(0), (left_padding, right_padding, top_padding, bottom_padding),
-                  value=-1)  # Assuming -1 is an ignore index for labels
+                  value=0)  # Assuming -1 is an ignore index for labels
 
     image = np.asarray(image) #(1, 512, 512)
     label = np.asarray(label) #(1, 512, 512)
