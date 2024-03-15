@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 if __name__ == "__main__":
-    # 选择设备，有cuda用cuda，没有就用cpu
+    # 选择设备
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
     # 加载网络，图片单通道，分类为1。
     net = UNet(n_channels=1, n_classes=6)

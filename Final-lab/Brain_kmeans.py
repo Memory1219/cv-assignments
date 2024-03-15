@@ -3,7 +3,7 @@ from scipy.io import loadmat
 import numpy as np
 from sklearn.cluster import KMeans
 from collections import Counter
-
+import utils
 data = loadmat('Brain.mat')
 T1 = data['T1']
 labels = data['label']
@@ -44,8 +44,8 @@ for i, value in results:
 # final_segmented[segmented_kmeans == sort_counts_segment[4][0]] = 5
 
 
-
-
+f1 = utils.calculate_f1_score(label, final_segmented)
+print(f1)
 
 
 fig, ax = plt.subplots(1, 3, figsize=(15, 5))

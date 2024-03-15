@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from skimage.filters import threshold_multiotsu
 from scipy.ndimage import gaussian_filter
-
+import utils
 data = loadmat('Brain.mat')
 T1 = data['T1']
 labels = data['label']
@@ -45,9 +45,14 @@ for i, value in results:
     final_segmented[regions == sort_counts_segment[i][0]] = value
 final_segmented[regions == sort_counts_segment[3][0]] = 4
 final_segmented[regions == sort_counts_segment[4][0]] = 5
-class_values = [0, 4, 5, 1, 3, 2]
-for i, value in enumerate(class_values):
+class_random = [0, 5, 4, 1, 3, 2]
+for i, value in enumerate(class_random):
     final_segmented_2[regions == i] = value
+
+
+f1 = utils.calculate_f1_score(label, final_segmented)
+print(f1)
+
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 axes[0].imshow(image_slice, cmap='gray')

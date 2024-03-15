@@ -47,33 +47,13 @@ class BrianLoader(Dataset):
         image = self.images[:, :, idx]
         label = self.labels[:, :, idx]
 
-        # image = image.reshape(1, image.shape[0], image.shape[1])
-        # label = label.reshape(1, label.shape[0], label.shape[1])
-
-        image = torch.tensor(image, dtype=torch.float32)
-        # Label: No need to add a channel dimension for labels in segmentation tasks
-        label = torch.tensor(label, dtype=torch.long)
-        # Calculate padding
-        # For height
-        top_padding = (512 - image.shape[0]) // 2
-        bottom_padding = 512 - image.shape[0] - top_padding
-        # For width
-        left_padding = (512 - image.shape[1]) // 2
-        right_padding = 512 - image.shape[1] - left_padding
-
-        # Pad the image and label
-        image = F.pad(image.unsqueeze(0), (left_padding, right_padding, top_padding, bottom_padding))
-        label = F.pad(label.unsqueeze(0), (left_padding, right_padding, top_padding, bottom_padding),
-                      value=-1)  # Assuming -1 is an ignore index for labels
-
-        image = np.asarray(image)
-        label = np.asarray(label)
+        image, label = data_process(image, label)
 
         # 随机进行数据增强，为2时不做处理
-        # flipCode = random.choice([-1, 0, 1, 2])
-        # if flipCode != 2:
-        #     image = self.augment(image, flipCode)
-        #     label = self.augment(label, flipCode)
+        flipCode = random.choice([-1, 0, 1, 2])
+        if flipCode != 2:
+            image = self.augment(image, flipCode)
+            label = self.augment(label, flipCode)
         return image, label
 
 

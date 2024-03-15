@@ -48,7 +48,7 @@ seed_points = [(np.random.randint(0, smoothed_slice.shape[0]), np.random.randint
 newSeeds = []
 for x, y in seed_points:
     newSeeds.append(utils.Point(x, y))
-segmented_regions = utils.regionGrow(smoothed_slice, newSeeds, thresh = 2)
+segmented_regions = utils.region_grow(smoothed_slice, newSeeds, thresh = 2)
 # segmented_regions = utils.merge_areas(segmented_regions)
 # Display the result
 plt.figure(figsize=(6, 6))

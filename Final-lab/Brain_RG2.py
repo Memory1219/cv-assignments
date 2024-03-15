@@ -44,7 +44,7 @@ for seed in seeds:
 # segmented_regions = utils.merge_areas(segmented_regions)
 # Display the result
 
-segmented_regions2 = utils.region_growing_8(smoothed_slice, new_seeds, threshold=25)
+# segmented_regions2 = utils.region_growing_8(smoothed_slice, new_seeds, threshold=25)
 segmented_regions = utils.region_growing(smoothed_slice, new_seeds, thresh=25)
 
 # plt.figure(figsize=(6, 6))
