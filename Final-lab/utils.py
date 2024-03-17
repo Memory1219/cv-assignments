@@ -49,7 +49,7 @@ def select_connects(mode):
 
 
 def get_gray_diff(img, point_1, point_2):
-    return abs(int(img(point_1)) - int(img(point_2)))
+    return abs(int(img[point_1]) - int(img[point_2]))
 
 
 def region_grow(img, seeds, thresh, mode=1):
