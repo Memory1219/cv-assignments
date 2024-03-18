@@ -10,13 +10,13 @@ class DoubleConv(nn.Module):
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        # 组合卷积层、归一化和激活函数，并封装成一个顺序执行的容器
+        # Combine convolutional layers, normalization, and activation functions and encapsulate them into a sequentially executed container
         self.double_conv = nn.Sequential(
-            # 卷积，输入1通道， 输出6通道，图像大小不变
+            # Convolution, input 1 channel, output 6 channels, image size unchanged
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            # 批量归一化，用于增加训练速度和模型稳定性
+            # Batch normalization for increased training speed and model stability
             nn.BatchNorm2d(out_channels),
-            # 激活函数，引入非线性，inplace=True指定在原地修改数据，减少内存占用
+            # Activation function, introducing nonlinearity, inplace = True specifies to modify data in place to reduce memory footprint
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
@@ -46,10 +46,10 @@ class Up(nn.Module):
         super().__init__()
 
         if bilinear:
-            # 使用双线性插值进行上采样
+            # Upsampling using bilinear interpolation
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         else:
-            # 使用转置卷积进行上采样
+            # Upsampling using transposed convolution
             self.up = nn.ConvTranspose2d(in_channels // 2, in_channels // 2, kernel_size=2, stride=2)
 
         self.conv = DoubleConv(in_channels, out_channels)
@@ -60,7 +60,7 @@ class Up(nn.Module):
         diff_y = torch.tensor([x2.size()[2] - x1.size()[2]])
         diff_x = torch.tensor([x2.size()[3] - x1.size()[3]])
 
-        # 因为要将x1和x2在通道维度拼接，所以要保证大小一致
+        # Because x1 and x2 are to be spliced in the channel dimension, the sizes must be consistent.
         x1 = F.pad(x1, [diff_x // 2, diff_x - diff_x // 2,
                         diff_y // 2, diff_y - diff_y // 2])
 

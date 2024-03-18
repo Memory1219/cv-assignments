@@ -11,7 +11,7 @@ import os
 def train_net(net, device, data_path, epochs=100, batch_size=2, lr=0.0001):
 
     full_dataset = BrianLoader(data_path)
-    # 将数据集分割为训练集和验证集
+    # Split the data set into training set and verification set
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
@@ -20,61 +20,52 @@ def train_net(net, device, data_path, epochs=100, batch_size=2, lr=0.0001):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-    # 定义RMSprop算法
+    # define optimizer
     optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
-    # 定义Loss算法
+    # define Loss
     criterion = nn.CrossEntropyLoss()
-    # best_loss统计，初始化为正无穷
+    # initialized to positive infinity
     best_loss = float('inf')
 
-    # 训练epochs次
+    # Training epochs time
     for epoch in range(epochs):
-        # 训练模式
+        # Training mode
         net.train()
-        # 初始化
+        # Initialization
         total_train_loss = 0
         total_train_acc = 0
         ave_train_loss = 0
         ave_train_acc = 0
 
-        # 按照batch_size开始训练
+        # Start training according to batch_size
         for image, label in train_loader:
-            label = label.squeeze(1)  # 将labels形状从[1, 1, 512, 512]改为[1, 512, 512]
+            label = label.squeeze(1)  # Change the labels shape from [1, 1, 512, 512] to [1, 512, 512]
             optimizer.zero_grad()
-            # 将数据拷贝到device中
+            # Copy the data to the device
             image = image.to(device=device, dtype=torch.float32)
             label = label.to(device=device, dtype=torch.float32)
-            # 使用网络参数，输出预测结果
+            # Use network parameters to output prediction results
             pred = net(image)
-            # 计算loss
+            # calculate loss
             loss = criterion(pred, label)
             print('Loss/train', loss.item())
             total_train_loss += loss.item()
-            # 计算accuracy
+            # calculate accuracy
             acc = calculate_accuracy(pred, label)
             total_train_acc += acc
-            # 保存loss值最小的网络参数
-            # if loss < best_loss:
-            #     best_loss = loss
-            #     torch.save(net.state_dict(), 'best_model.pth')
-            # 更新参数
+            # Update parameters
             loss.backward()
             optimizer.step()
         ave_train_loss = total_train_loss / len(train_loader)
         ave_train_acc = total_train_acc / len(train_loader)
-        # print(f'Epoch {epoch + 1}, Loss: {ave_train_loss}, Accuracy: {ave_train_acc}%')
 
-        # 保存最佳模型
-        # if ave_train_loss < best_loss:
-        #     best_loss = ave_train_loss
-        #     torch.save(net.state_dict(), 'best_model.pth')
-
+        # Verification mode
         net.eval()
         total_test_loss = 0
         total_test_acc = 0
         with torch.no_grad():
             for image, label in test_loader:
-                label = label.squeeze(1)  # 将labels形状从[1, 1, 512, 512]改为[1, 512, 512]
+                label = label.squeeze(1)  # Change the labels shape from [1, 1, 512, 512] to [1, 512, 512]
                 image = image.to(device)
                 label = label.to(device)
                 output = net(image)
@@ -92,16 +83,16 @@ def train_net(net, device, data_path, epochs=100, batch_size=2, lr=0.0001):
         if ave_test_loss < best_loss:
             save_path = os.path.join('model', 'best_model.pth')
             save_model(net, save_path)
-            best_val_loss = ave_test_loss
+            best_loss = ave_test_loss
             print(f'Model saved to {save_path}')
 
 if __name__ == "__main__":
-    # 选择设备
+    # Select the equipment
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-    # 加载网络，图片单通道1，分类为1。
+    # Load the network, single channel, classified as 6.
     net = UNet(n_channels=1, n_classes=6)
-    # 将网络拷贝到deivce中
+    # Copy the network to deivce
     net.to(device=device)
-    # 指定训练集地址，开始训练
+    # Specify the address of the training set and start the training.
     data_path = "Brain.mat"
     train_net(net, device, data_path)

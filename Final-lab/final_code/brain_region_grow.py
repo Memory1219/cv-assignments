@@ -6,63 +6,73 @@ from scipy.ndimage import gaussian_filter
 import utils
 
 
+def brain_region_grow(image, label):
+    smoothed_slice = gaussian_filter(imgae, sigma=0.8)
+
+    max_val = np.max(smoothed_slice)
+    min_val = np.min(smoothed_slice)
+    normalization = 255 * (smoothed_slice - min_val) / (max_val - min_val)
+    smoothed_slice = np.round(normalization).astype(int)
+
+    seeds = utils.get_x_y(smoothed_slice, n=5)  # Get Initial Seed
 
 
-data = loadmat('Brain.mat')
-T1 = data['T1']
-labels = data['label']
-imgae = T1[:, :, 0]
-smoothed_slice = gaussian_filter(imgae, sigma=1)
+    new_seeds = []
+    for seed in seeds:
+        print(seed)
+        # The coordinates selected with the mouse are float type, which needs to be converted to int type.
+        # The coordinates selected with the mouse are (W,H), and the picture we read using the function is (row, column),
+        # which corresponds to the original picture is (H,W), so we need to change the coordinate position here.
+        new_seeds.append((int(seed[1]), int(seed[0])))
+
+    segmented_regions = utils.region_grow(smoothed_slice, new_seeds, thresh=25)
+    return segmented_regions
 
 
-max_val = np.max(smoothed_slice)
-min_val = np.min(smoothed_slice)
-T1_normalized = 255 * (smoothed_slice - min_val) / (max_val - min_val)
-smoothed_slice = np.round(T1_normalized).astype(int)
+if __name__ == '__main__':
+    data = loadmat('Brain.mat')
+    T1 = data['T1']
+    labels = data['label']
 
-smoothed_slice = imgae
+    final_segmentations = []
+    f1_scores = []
+    for i in range(T1.shape[2]):
+        print(f"begin segment image {i}")
+        imgae = T1[:, :, i]
+        label = labels[:, :, i]
+        final_segmentation = brain_region_grow(imgae, label)
+        f1 = utils.calculate_f1_score(label, final_segmentation)
+        final_segmentations.append(final_segmentation)
+        f1_scores.append(f1)
 
-seeds=utils.get_x_y(smoothed_slice, n=6) #获取初始种子
+    total_f1 = 0
+    for i, score in enumerate(f1_scores, start=1):
+        print(f"segmentation[{i}]:{score:.4f}")
+        total_f1 += score
 
-print("选取的初始点为：")
-print(seeds)
-new_seeds=[]
-new_seeds2 = []
-for seed in seeds:
-    print(seed)
-    #下面是需要注意的一点
-    #第一： 用鼠标选取的坐标为float类型，需要转为int型
-    #第二：用鼠标选取的坐标为（W,H），而我们使用函数读取到的图片是（行，列），而这对应到原图是（H,W），所以这里需要调换一下坐标位置，这是很多人容易忽略的一点
-    new_seeds.append((int(seed[1]), int(seed[0])))
-    # new_seeds2.append(utils.Point(int(seed[1]), int(seed[0])))
+    average_f1 = total_f1 / len(f1_scores)
+    print(f"average_f1：{average_f1:.4f}")
+
+    # evaluation
+    specificity_list = []
+    sensitivity_list = []
+    for i in range(T1.shape[2]):
+        sensitivity_list.append(utils.calculate_weighted_sensitivity(labels[:, :, i], final_segmentations[i]))
+        specificity_list.append(utils.calculate_weighted_specificity(labels[:, :, i], final_segmentations[i]))
+    print(len(f1_scores))
+    for i in range(len(f1_scores)):
+        print(
+            f"Result[{i + 1}]  F1:{f1_scores[i]:.4f}  sensitivity:{sensitivity_list[i]:.4f}  specificity:{specificity_list[i]:.4f}")
 
 
-# print(new_seeds)
-# Apply region growing on the smoothed slice
-# seed_points = []
-# for x, y in new_seeds:
-#     seed_points.append((x, y))
-#     seed_points.append(utils.Point(x,y))
-# segmented_regions = utils.region_growing(smoothed_slice, new_seeds, thresh=25)
-# segmented_regions = utils.merge_areas(segmented_regions)
-# Display the result
-
-# segmented_regions2 = utils.region_growing_8(smoothed_slice, new_seeds, threshold=25)
-segmented_regions = utils.region_grow(smoothed_slice, new_seeds, thresh=25)
-
-# plt.figure(figsize=(6, 6))
-# plt.imshow(segmented_regions, cmap='jet')
-# plt.title('Region Growing Segmented Slice')
-# plt.axis('off')
-# plt.show()
-fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-t1_image2 = axes[0].imshow(segmented_regions, cmap='jet')
-axes[0].set_title('Original Slice')
-fig.colorbar(t1_image2, ax=axes[0], orientation='horizontal')
-t1_image = axes[1].imshow(labels[:,:,0], cmap='jet')
-axes[1].set_title('Colored Segmentation')
-fig.colorbar(t1_image, ax=axes[1], orientation='horizontal')
-for ax in axes:
-    ax.axis('off')
-plt.tight_layout()
-plt.show()
+    # display
+    plot_rows = 2
+    plot_cols = 5
+    fig_size = (6 * plot_cols, 6 * plot_rows)
+    image_list = []
+    image_list.extend([("segmented" + str(i + 1), seg) for i, seg in enumerate(final_segmentations)])
+    font_size = 20
+    camp = 'jet'
+    fig, sub_figs = utils.create_subplots(plot_rows, plot_cols, fig_size, image_list, font_size, camp)
+    plt.tight_layout()
+    plt.show()

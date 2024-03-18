@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from sklearn.metrics import f1_score
-
+from sklearn.metrics import confusion_matrix
 
 def calculate_f1_score(y_true, y_pred, n_classes=6):
     weighted_f1 = f1_score(y_true.flatten(), y_pred.flatten(), average='weighted', labels=range(n_classes))
@@ -20,14 +20,14 @@ def create_subplots(plot_rows, plot_cols, fig_size, image_list, font_size, camp)
             if index < len(image_list):
                 image_name, image_data = image_list[index]
 
-                # 当只有一个子图时，sub_figs不是数组，直接访问imshow
+                # When there is only one subgraph, sub_figs is not an array. Visit directly.
                 if plot_rows == 1 and plot_cols == 1:
                     sub_fig = sub_figs
                 elif plot_rows == 1 or plot_cols == 1:
-                    # 当只有一行或一列时，sub_figs是一维数组
+                    # When there is only one line or column, sub_figs is a one-dimensional array.
                     sub_fig = sub_figs[max(i, j)]
                 else:
-                    # 否则，sub_figs是二维数组
+                    # Otherwise, sub_figs is a two-dimensional array.
                     sub_fig = sub_figs[i, j]
 
                 temp_img = sub_fig.imshow(image_data, cmap=camp)
@@ -36,12 +36,12 @@ def create_subplots(plot_rows, plot_cols, fig_size, image_list, font_size, camp)
                 # cbar.ax.tick_params(labelsize=font_size)
                 sub_fig.axis('off')
 
-    # 当子图数量小于网格数量时，隐藏多余的子图
+    # When the number of subgraphs is less than the number of grids, hide the redundant subgraphs.
     for index in range(len(image_list), plot_rows * plot_cols):
         i = index // plot_cols
         j = index % plot_cols
         if plot_rows == 1 and plot_cols == 1:
-            continue  # 只有一个子图时不需要隐藏
+            continue  # There is no need to hide when there is only one subgraph.
         elif plot_rows == 1 or plot_cols == 1:
             sub_fig = sub_figs[max(i, j)]
         else:
@@ -104,4 +104,65 @@ def get_x_y(image, n):
     plt.imshow(im, cmap=plt.get_cmap("gray"))
     pos = plt.ginput(n)
     plt.close()
-    return pos  # 得到的pos是列表中包含多个坐标元组
+    return pos  # The resulting pos is a list of tuples containing multiple coordinates.
+
+
+def calculate_weighted_specificity(y_true, y_pred, n_classes=6):
+    """
+    Calculate the weighted specificity of multi-category image segmentation results.
+    """
+    # Flatten
+    y_true_flat = y_true.flatten()
+    y_pred_flat = y_pred.flatten()
+
+    # Initialize variables
+    sum_specificity = 0
+    sum_weights = 0
+
+    # Calculate the confusion matrix
+    cm = confusion_matrix(y_true_flat, y_pred_flat, labels=range(n_classes))
+
+    # Calculate specificity for each category
+    for i in range(n_classes):
+        TN = cm.sum() - (cm[i, :].sum() + cm[:, i].sum() - cm[i, i])
+        FP = cm[:, i].sum() - cm[i, i]
+        specificity = TN / (TN + FP) if (TN + FP) > 0 else 0
+        weight = cm[:, i].sum()
+        sum_specificity += specificity * weight
+        sum_weights += weight
+
+    weighted_specificity = sum_specificity / sum_weights if sum_weights > 0 else 0
+
+    return weighted_specificity
+
+
+def calculate_weighted_sensitivity(y_true, y_pred, n_classes=6):
+    """
+    Calculate the weighted sensitivity of multi-category image segmentation results.
+    """
+    # flatten
+    y_true_flat = y_true.flatten()
+    y_pred_flat = y_pred.flatten()
+
+    # Initialize variables
+    sum_sensitivity = 0
+    sum_weights = 0
+
+    # Calculate the confusion matrix
+    cm = confusion_matrix(y_true_flat, y_pred_flat, labels=range(n_classes))
+
+    # Calculate sensitivity for each category
+    for i in range(n_classes):
+
+        TP = cm[i, i]
+        FN = cm[i, :].sum() - TP
+
+        sensitivity = TP / (TP + FN) if (TP + FN) > 0 else 0
+        weight = cm[i, :].sum()
+        sum_sensitivity += sensitivity * weight
+        sum_weights += weight
+
+    # Calculate the weighted sensitivity
+    weighted_sensitivity = sum_sensitivity / sum_weights if sum_weights > 0 else 0
+
+    return weighted_sensitivity

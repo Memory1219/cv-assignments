@@ -39,7 +39,7 @@ class BrianLoader(Dataset):
         return self.images.shape[2]
 
     def augment(self, image, flipCode):
-        # 使用cv2.flip进行数据增强，filpCode为1水平翻转，0垂直翻转，-1水平+垂直翻转
+        # Use cv2.flip for data enhancement, filpCode is 1 horizontal flip, 0 vertical flip, -1 horizontal + vertical flip
         flip = cv2.flip(image, flipCode)
         return flip
 
@@ -49,7 +49,7 @@ class BrianLoader(Dataset):
 
         image, label = data_process(image, label)
 
-        # 随机进行数据增强，为2时不做处理
+        # Random data enhancement, no processing at 2 o'clock
         flipCode = random.choice([-1, 0, 1, 2])
         if flipCode != 2:
             image = self.augment(image, flipCode)
@@ -60,7 +60,7 @@ class BrianLoader(Dataset):
 
 if __name__ == "__main__":
     brian_data = BrianLoader("Brain.mat")
-    print("数据个数：", len(brian_data))
+    print("data size：", len(brian_data))
     train_loader = torch.utils.data.DataLoader(dataset=brian_data,
                                                batch_size=2,
                                                shuffle=True)

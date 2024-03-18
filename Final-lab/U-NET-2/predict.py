@@ -1,82 +1,84 @@
-import glob
 import numpy as np
 import torch
-import os
-import cv2
+import utils_unet
 from model import UNet
 from scipy.io import loadmat
 from dataset import data_process
 import matplotlib.pyplot as plt
 
 
-if __name__ == "__main__":
-    # 选择设备
-    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-    # 加载网络，图片单通道，分类为1。
-    net = UNet(n_channels=1, n_classes=6)
-    # 将网络拷贝到deivce中
-    net.to(device=device)
-    # 加载模型参数
-    net.load_state_dict(torch.load('model/best_model.pth', map_location=device))
-    # 测试模式
-    net.eval()
-    # 读取所有图片路径
-    data = loadmat('Brain.mat')
-    tests_path = data['T1']
-    image1 = tests_path[:, :, 1]
-    labels = data['label']
-    label1 = labels[:, :, 1]
-    image1, label1 = data_process(image1, label1)
-    img = image1.reshape(1, 1, 512, 512)
-    # 转为tensor
+def predict(net, img):
+    # Turn to tensor
     img_tensor = torch.from_numpy(img)
-    # 将tensor拷贝到device中，只用cpu就是拷贝到cpu中，用cuda就是拷贝到cuda中。
+    # Copy the tensor to the device
     img_tensor = img_tensor.to(device=device, dtype=torch.float32)
     print(img_tensor.shape)
-    # 预测
+    # predict
     pred = net(img_tensor)
-    # 处理结果
-    # 假设pred是网络的输出，形状为[1, 6, 512, 512]
-    # 将网络输出转换为numpy数组，并去掉批次维度，结果形状为[6, 512, 512]
+    # Processing results
+    # Suppose pred is the output of the network, and the shape is [1, 6, 512, 512]
+    # Convert the network output to a numpy array and remove the batch dimension. The resulting shape is [6, 512, 512]
     pred = pred.data.cpu().numpy()[0]
 
-    # 对于每个像素点，找到概率最高的类别索引
+    # For each pixel, find the category index with the highest probability.
     pred_class_indices = np.argmax(pred, axis=0)
 
-    # 可选：根据需要将类别索引转换为实际的像素值，这里类别索引本身即为所需像素值（0-5）
-
-    # 保存结果图像，需要将类别索引转换为uint8类型
+    # To save the result image, need to convert the category index to uint8 type.
     pred_image = pred_class_indices.astype(np.uint8)
 
-    plt.imshow(pred_image, cmap='jet')
+    return pred_image
 
+
+if __name__ == "__main__":
+    # Select device
+    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
+    # Load network, picture single channel, classified as 6.
+    net = UNet(n_channels=1, n_classes=6)
+    # Copy the network to deivce
+    net.to(device=device)
+    # Load model parameters
+    net.load_state_dict(torch.load('model/best_model.pth', map_location=device))
+    # Test mode
+    net.eval()
+    # Read all image paths
+    data = loadmat('Brain.mat')
+    tests_data = data['T1']
+    labels = data['label']
+
+    # predict and evaluation
+    final_segmentations = []
+    f1_scores = []
+    processed_labels = []
+    for i in range(tests_data.shape[2]):
+        img = tests_data[:, :, i]
+        label = labels[:, :, i]
+        img, label = data_process(img, label)
+        img = img.reshape(1, 1, 512, 512)
+        pred_image = predict(net, img)
+        f1 = utils_unet.calculate_f1_score(pred_image, label)
+        final_segmentations.append(pred_image)
+        f1_scores.append(f1)
+        processed_labels.append(np.squeeze(label))
+    # print(type(final_segmentations[0]))
+    # print(final_segmentations[0].shape)
+    specificity_list = []
+    sensitivity_list = []
+    for i in range(tests_data.shape[2]):
+        sensitivity_list.append(utils_unet.calculate_weighted_sensitivity(processed_labels[i], final_segmentations[i]))
+        specificity_list.append(utils_unet.calculate_weighted_specificity(processed_labels[i], final_segmentations[i]))
+    print(len(f1_scores))
+    for i in range(len(f1_scores)):
+        print(
+            f"Result[{i + 1}]  F1:{f1_scores[i]:.4f}  sensitivity:{sensitivity_list[i]:.4f}  specificity:{specificity_list[i]:.4f}")
+
+    # diaplay
+    plot_rows = 2
+    plot_cols = 5
+    fig_size = (6 * plot_cols, 6 * plot_rows)
+    image_list = []
+    image_list.extend([("segmented" + str(i + 1), seg) for i, seg in enumerate(final_segmentations)])
+    font_size = 20
+    camp = 'jet'
+    fig, sub_figs = utils_unet.create_subplots(plot_rows, plot_cols, fig_size, image_list, font_size, camp)
+    plt.tight_layout()
     plt.show()
-
-
-
-    # 如果你需要将结果保存为彩色图像，可以根据类别索引映射到不同的颜色
-    # 这里只是直接保存了类别索引作为像素值
-    # cv2.imwrite(save_res_path, pred_image)
-    # 遍历所有图片
-    # for test_path in tests_path:
-    #     # 保存结果地址
-    #     save_res_path = test_path.split('.')[0] + '_res.png'
-    #     # 读取图片
-    #     img = cv2.imread(test_path)
-    #     # 转为灰度图
-    #     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    #     # 转为batch为1，通道为1，大小为512*512的数组
-    #     img = img.reshape(1, 1, img.shape[0], img.shape[1])
-    #     # 转为tensor
-    #     img_tensor = torch.from_numpy(img)
-    #     # 将tensor拷贝到device中，只用cpu就是拷贝到cpu中，用cuda就是拷贝到cuda中。
-    #     img_tensor = img_tensor.to(device=device, dtype=torch.float32)
-    #     # 预测
-    #     pred = net(img_tensor)
-    #     # 提取结果
-    #     pred = np.array(pred.data.cpu()[0])[0]
-    #     # 处理结果
-    #     pred[pred >= 0.5] = 255
-    #     pred[pred < 0.5] = 0
-    #     # 保存图片
-    #     cv2.imwrite(save_res_path, pred)

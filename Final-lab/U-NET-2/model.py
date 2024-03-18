@@ -8,22 +8,22 @@ class UNet(nn.Module):
         self.n_classes = n_classes
         self.bilinear = bilinear
 
-        # unet第一步，对输入图像进行两次卷积
+        # The first step of unet is to convolution the input image twice.
         self.inc = DoubleConv(n_channels, 64)
 
-        # 对应四次下采样，unet中下采样后的卷积、激活等过程也融合在Down中
+        # Corresponding to four downsampling, the convolution and activation processes after downsampling in unet are also integrated in Down.
         self.down1 = Down(64, 128)
         self.down2 = Down(128, 256)
         self.down3 = Down(256, 512)
         self.down4 = Down(512, 512)
 
-        # 对应四次上采样，unet中上采样后的拼接、卷积等过程也融入Up函数中
+        # Corresponding to four upsampling, the splicing and convolution processes after upsampling in unet are also integrated into the Up function.
         self.up1 = Up(1024, 256, bilinear)
         self.up2 = Up(512, 128, bilinear)
         self.up3 = Up(256, 64, bilinear)
         self.up4 = Up(128, 64, bilinear)
 
-        # 最后将输出的64通道通过卷积映射到n_classes个通道，对应每个像素属于每个类别的概率
+        # Finally, the output 64 channels are mapped to the n_classes channel by convolution, corresponding to the probability of each pixel belonging to each category.
         self.outc = OutConv(64, n_classes)
 
     def forward(self, x):

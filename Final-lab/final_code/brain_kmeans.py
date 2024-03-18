@@ -18,6 +18,7 @@ def kmeans_segment(image, label):
     except Exception as e:
         print(f"Error occurred: {e}")
 
+    # Count the area of different areas and mark them according to the area.
     regions_pixel_values = segmented_kmeans.flatten().astype(int)
     pixel_values = label.flatten().astype(int)
 
@@ -47,6 +48,7 @@ if __name__ == "__main__":
     print(T1.shape)
     print(labels.shape)
 
+    # segmentation
     final_segmentations = []
     f1_scores = []
     for i in range(T1.shape[2]):
@@ -67,6 +69,18 @@ if __name__ == "__main__":
     average_f1 = total_f1 / len(f1_scores)
     print(f"average_f1：{average_f1:.4f}")
 
+    # evaluation
+    specificity_list = []
+    sensitivity_list = []
+    for i in range(T1.shape[2]):
+        sensitivity_list.append(utils.calculate_weighted_sensitivity(labels[:, :, i], final_segmentations[i]))
+        specificity_list.append(utils.calculate_weighted_specificity(labels[:, :, i], final_segmentations[i]))
+    print(len(f1_scores))
+    for i in range(len(f1_scores)):
+        print(f"Result[{i + 1}]  F1:{f1_scores[i]:.4f}  sensitivity:{sensitivity_list[i]:.4f}  specificity:{specificity_list[i]:.4f}")
+
+
+    # display
     plot_rows = 2
     plot_cols = 5
     fig_size = (6 * plot_cols, 6 * plot_rows)
